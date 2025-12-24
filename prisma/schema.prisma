@@ -1,0 +1,233 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id            String        @id @default(cuid())
+  password      String?
+  name          String?
+  email         String?       @unique
+  phone         String?
+  tax           String?
+  province      String?
+  ward          String?
+  address       String?
+  emailVerified DateTime?
+  image         String?
+  role          Role          @default(CLIENT)
+  status        AccountStatus @default(ACTIVE)
+  accounts      Account[]
+  loginHistory  LoginLog[]
+  reviews       Review[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model LoginLog {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  ipAddress  String  @db.VarChar(45)
+  browser    String  @db.VarChar(100)
+  os         String  @db.VarChar(100)
+  deviceType String? @db.VarChar(50)
+  location   String? @db.VarChar(255)
+
+  activityType String   @default("LOGIN_SUCCESS") @db.VarChar(50)
+  loginTime    DateTime @default(now())
+
+  @@index([userId])
+  @@map("login_logs")
+}
+
+model SystemConfig {
+  key         String   @id @map("config_key")
+  value       String   @map("config_value")
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_configs")
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+  @@unique([email, token])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+  @@unique([email, token])
+}
+
+// --- QUẢN LÝ SẢN PHẨM & BIẾN THỂ (CẤU TRÚC CHUYÊN NGHIỆP) ---
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  image       String?
+  description String?   @db.Text
+  parentId        String?   // ID của danh mục cha (nếu có)
+  parent          Category? @relation("CategoryToCategory", fields: [parentId], references: [id], onDelete: Cascade)
+  children        Category[] @relation("CategoryToCategory")
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Brand {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  logo        String?
+  description String?   @db.Text
+  website     String?
+  isFeatured  Boolean @default(false)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  shortDescription String?          @db.Text
+  description      String?          @db.Text
+  status           ProductStatus    @default(DRAFT)
+
+  categoryId       String
+  category         Category         @relation(fields: [categoryId], references: [id])
+  brandId          String
+  brand            Brand            @relation(fields: [brandId], references: [id])
+
+  images           ProductImage[]
+  variants         ProductVariant[]
+  reviews          Review[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model ProductVariant {
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  price       Float
+  salePrice   Float?
+  stock       Int      @default(0)
+  variantName String
+
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  attributeValues AttributeValue[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  isMain    Boolean @default(false)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Attribute {
+  id        String           @id @default(cuid())
+  name      String           @unique
+  type      String           @default("text")
+  values    AttributeValue[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model AttributeValue {
+  id          String    @id @default(cuid())
+  value       String    // Tên hiển thị: "Đỏ", "Size L"
+  meta        String?   // Lưu mã màu #000000 hoặc thông tin phụ
+  attributeId String
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  variants    ProductVariant[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@index([attributeId]) // Tối ưu tốc độ truy vấn theo attribute
+}
+
+model Review {
+  id        String       @id @default(cuid())
+  rating    Int          @default(5)
+  comment   String?      @db.Text
+  images    String?
+  status    ReviewStatus @default(PENDING)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  productId String
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+enum Role {
+  WEBMASTER
+  ADMIN
+  CLIENT
+}
+
+enum AccountStatus {
+  ACTIVE
+  LOCKED
+  SUSPENDED
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  OUT_OF_STOCK
+  HIDDEN
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  SPAM
+}
