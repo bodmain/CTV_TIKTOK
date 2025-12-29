@@ -71,11 +71,8 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         <MenuItem href='/dashboard' icon={<i className='ri-home-smile-line' />}>
           Dashboard
         </MenuItem>
-        <MenuItem href='/about' icon={<i className='ri-information-line' />}>
-          About
-        </MenuItem>
-        <MenuItem href='/settings' icon={<i className='ri-settings-5-line' />}>
-          Cấu hình
+        <MenuItem href='/orders' icon={<i className='ri-shopping-cart-2-line' />}>
+          Quản lý đơn hàng
         </MenuItem>
       </Menu>
     </ScrollWrapper>

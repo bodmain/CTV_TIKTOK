@@ -22,15 +22,24 @@ export const metadata: Metadata = {
   description: 'Tài khoản của tôi'
 }
 
+// Import các Tab cũ (Dùng dynamic import để tải trang nhanh hơn)
 const SecurityTab = dynamic(() => import('@views/pages/profile/right/security'))
 const NotificationsTab = dynamic(() => import('@views/pages/profile/right/notifications'))
 const ConnectionsTab = dynamic(() => import('@views/pages/profile/right/connections'))
+
+// --- 1. THÊM DÒNG NÀY: Import Tab KYC ---
+const KYCTab = dynamic(() => import('@views/pages/profile/right/kyc'))
+// ----------------------------------------
 
 // Vars
 const tabContentList = (): { [key: string]: ReactElement } => ({
   security: <SecurityTab />,
   notifications: <NotificationsTab />,
-  connections: <ConnectionsTab />
+  connections: <ConnectionsTab />,
+
+  // --- 2. THÊM DÒNG NÀY: Khai báo nội dung ---
+  kyc: <KYCTab />
+  // Chữ 'kyc' này khớp với value='kyc' bạn đã đặt bên file UserRight
 })
 
 const UserViewTab = async () => {

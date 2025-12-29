@@ -35,6 +35,12 @@ const UserRight = ({ tabContentList }: { tabContentList: { [key: string]: ReactE
                 iconPosition='start'
               />
               <Tab icon={<i className='ri-link-m' />} value='connections' label='Kết nối' iconPosition='start' />
+              <Tab
+                icon={<i className='ri-id-card-line' />} // Icon thẻ căn cước
+                value='kyc'
+                label='Xác minh danh tính'
+                iconPosition='start'
+              />
             </CustomTabList>
           </Grid>
           <Grid size={{ xs: 12 }}>

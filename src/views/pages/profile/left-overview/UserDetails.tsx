@@ -12,13 +12,25 @@ import type { ThemeColor } from '@core/types'
 // Component Imports
 import EditUserInfo from '@components/dialogs/edit-user-info'
 import OpenDialogOnElementClick from '@components/dialogs/OpenDialogOnElementClick'
-import CustomAvatar from '@core/components/mui/Avatar'
 
+// Import Component Avatar
+import UserAvatar from './UserAvatar'
+
+// !!! QUAN TRỌNG: Import Prisma và Auth
 import { auth } from '@/libs/auth'
+import { prisma } from '@/libs/prisma' // <--- Thêm dòng này
 
 const UserDetails = async () => {
   const session = await auth()
-  const data = session?.user
+
+  // !!! QUAN TRỌNG: Lấy dữ liệu user mới nhất từ Database thay vì session
+  // Session chỉ dùng để lấy email định danh
+  const data = await prisma.user.findUnique({
+    where: { email: session?.user?.email as string }
+  })
+
+  // Nếu không tìm thấy user (trường hợp hiếm), dùng tạm dữ liệu session hoặc null
+  if (!data) return null
 
   // Vars
   const buttonProps = (children: string, color: ThemeColor, variant: ButtonProps['variant']): ButtonProps => ({
@@ -27,7 +39,7 @@ const UserDetails = async () => {
     variant
   })
 
-  // Map trạng thái để hiển thị màu sắc và nhãn tương ứng
+  // Map trạng thái
   const statusMap: Record<string, { label: string; color: string }> = {
     ACTIVE: { label: 'Kích hoạt', color: 'success.main' },
     LOCKED: { label: 'Đã khóa', color: 'error.main' },
@@ -40,13 +52,9 @@ const UserDetails = async () => {
         <CardContent className='flex flex-col pbs-12 gap-6'>
           <div className='flex flex-col gap-6'>
             <div className='flex flex-col items-center justify-center gap-4'>
-              <CustomAvatar
-                alt='user-profile'
-                src={data?.image || '/images/avatars/1.png'} // Sử dụng ảnh từ DB nếu có
-                variant='rounded'
-                className='rounded-lg'
-                size={120}
-              />
+              {/* Component Avatar */}
+              <UserAvatar avatarUrl={data?.image || '/images/avatars/1.png'} userName={data?.name || 'User'} />
+
               <Typography variant='h5'>{data?.name}</Typography>
             </div>
           </div>
@@ -96,7 +104,6 @@ const UserDetails = async () => {
                 <Typography color='text.primary' className='font-medium'>
                   Địa chỉ:
                 </Typography>
-                {/* Hiển thị kết hợp Phường/Xã, Tỉnh và địa chỉ cụ thể */}
                 <Typography>
                   {data?.address}
                   {(data?.ward || data?.province) && `, ${data?.ward}, ${data?.province}`}
@@ -112,11 +119,12 @@ const UserDetails = async () => {
               elementProps={buttonProps('Sửa thông tin', 'primary', 'contained')}
               dialog={EditUserInfo}
               dialogProps={{
+                // Truyền data mới nhất vào form sửa
                 data: {
                   name: data?.name,
                   phone: data?.phone,
                   address: data?.address,
-                  taxId: data?.tax, // Map từ tax sang taxId của form
+                  taxId: data?.tax,
                   province: data?.province,
                   ward: data?.ward
                 }

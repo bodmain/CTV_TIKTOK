@@ -23,7 +23,8 @@ import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 
 // Hook Imports
-import { signOut } from 'next-auth/react'
+// !!! SỬA: Import thêm useSession để lấy dữ liệu mới nhất
+import { signOut, useSession } from 'next-auth/react'
 
 import { useSettings } from '@core/hooks/useSettings'
 
@@ -46,8 +47,11 @@ const UserDropdown = () => {
 
   // Hooks
   const router = useRouter()
-
   const { settings } = useSettings()
+
+  // !!! QUAN TRỌNG: Lấy dữ liệu session từ Client
+  // Khi bạn gọi update() ở trang Profile, hook này sẽ tự render lại ảnh mới
+  const { data: session } = useSession()
 
   const handleDropdownOpen = () => {
     !open ? setOpen(true) : setOpen(false)
@@ -66,7 +70,20 @@ const UserDropdown = () => {
   }
 
   const handleUserLogout = async () => {
-    await signOut()
+    try {
+      // Logout và chuyển hướng về trang login
+      await signOut({ callbackUrl: '/login', redirect: false })
+      router.push('/login')
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // Chuẩn bị dữ liệu hiển thị (ưu tiên lấy từ session)
+  const userData = session?.user || {
+    name: 'John Doe',
+    email: 'admin@materialize.com',
+    image: '/images/avatars/1.png'
   }
 
   return (
@@ -80,8 +97,9 @@ const UserDropdown = () => {
       >
         <Avatar
           ref={anchorRef}
-          alt='John Doe'
-          src='/images/avatars/1.png'
+          alt={userData.name || 'User'}
+          // !!! SỬA: Dùng ảnh từ session, nếu không có thì dùng ảnh mặc định
+          src={userData.image || '/images/avatars/1.png'}
           onClick={handleDropdownOpen}
           className='cursor-pointer bs-[38px] is-[38px]'
         />
@@ -108,12 +126,12 @@ const UserDropdown = () => {
               <ClickAwayListener onClickAway={e => handleDropdownClose(e as MouseEvent | TouchEvent)}>
                 <MenuList>
                   <div className='flex items-center plb-2 pli-4 gap-2' tabIndex={-1}>
-                    <Avatar alt='John Doe' src='/images/avatars/1.png' />
+                    <Avatar alt={userData.name || 'User'} src={userData.image || '/images/avatars/1.png'} />
                     <div className='flex items-start flex-col'>
                       <Typography variant='body2' className='font-medium' color='text.primary'>
-                        John Doe
+                        {userData.name || 'User'}
                       </Typography>
-                      <Typography variant='caption'>admin@materialize.com</Typography>
+                      <Typography variant='caption'>{userData.email || 'No Email'}</Typography>
                     </div>
                   </div>
                   <Divider className='mlb-1' />

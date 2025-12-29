@@ -32,6 +32,8 @@ model User {
   reviews       Review[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  tiktokAccounts TikTokAccount[]
+  kyc           KYC?
 }
 
 model Account {
@@ -53,6 +55,21 @@ model Account {
   @@index([userId])
 }
 
+model TikTokAccount {
+  id          String   @id @default(cuid())
+  username    String
+  avatar      String?
+  isLive      Boolean  @default(false)      // Quan trọng: Lưu trạng thái Live
+  lastChecked DateTime @default(now())      // Quan trọng: Lưu thời gian check
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  password String?
+  nickname    String?  // Tên hiển thị (VD: Sơn Tùng MTP)
+  followers   String?  // Số người theo dõi (VD: 10M)
+  @@index([userId])
+}
 model LoginLog {
   id     String @id @default(cuid())
   userId String
@@ -96,6 +113,32 @@ model PasswordResetToken {
   token   String   @unique
   expires DateTime
   @@unique([email, token])
+}
+model KYC {
+  id          String   @id @default(cuid())
+  
+  // Quan hệ 1-1 với User (Mỗi người chỉ 1 hồ sơ)
+  userId      String   @unique 
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName    String   // Tên thật trên giấy tờ
+  idNumber    String   // Số CCCD/CMND
+  
+  imageFront  String   // URL ảnh mặt trước (Cloudinary)
+  imageBack   String   // URL ảnh mặt sau (Cloudinary)
+  
+  status      KYCStatus @default(PENDING) // Enum trạng thái
+  note        String?   // Ghi chú của Admin (VD: "Ảnh mờ, chụp lại")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Tạo Enum để quản lý trạng thái chặt chẽ hơn String
+enum KYCStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 // --- QUẢN LÝ SẢN PHẨM & BIẾN THỂ (CẤU TRÚC CHUYÊN NGHIỆP) ---

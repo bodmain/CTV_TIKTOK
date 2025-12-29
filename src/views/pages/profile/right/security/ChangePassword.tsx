@@ -26,7 +26,7 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { useTheme } from '@mui/material/styles'
 
-// 1. Schema chuẩn cho Reset Password
+// Schema
 const schema = pipe(
   object({
     password: pipe(string(), minLength(5, 'Mật khẩu cần tối thiểu 5 ký tự')),
@@ -41,7 +41,6 @@ const schema = pipe(
 type FormData = InferInput<typeof schema>
 
 const ChangePassword = () => {
-  // States
   const [isPasswordShown, setIsPasswordShown] = useState(false)
   const [isConfirmPasswordShown, setIsConfirmPasswordShown] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -82,9 +81,7 @@ const ChangePassword = () => {
       const apiRes = await fetch('/api/pages/profile/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          password: data.password
-        })
+        body: JSON.stringify({ password: data.password })
       })
 
       const result = await apiRes.json()
@@ -117,6 +114,7 @@ const ChangePassword = () => {
                     render={({ field }) => (
                       <TextField
                         {...field}
+                        id='password-field' // 👈 id cố định
                         fullWidth
                         label='Mật khẩu mới'
                         type={isPasswordShown ? 'text' : 'password'}
@@ -144,6 +142,7 @@ const ChangePassword = () => {
                     render={({ field }) => (
                       <TextField
                         {...field}
+                        id='confirm-password-field' // 👈 id cố định
                         fullWidth
                         label='Nhập lại mật khẩu mới'
                         type={isConfirmPasswordShown ? 'text' : 'password'}
